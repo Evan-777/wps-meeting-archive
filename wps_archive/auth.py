@@ -15,6 +15,16 @@ from .utils import parse_datetime, utc_now
 
 AUTH_URL = "https://openapi.wps.cn/oauth2/auth"
 TOKEN_EXPIRY_SAFETY_SECONDS = 60
+DEFAULT_REDIRECT_URI = "http://127.0.0.1:8765/callback"
+DEFAULT_USER_SCOPE = (
+    "kso.meeting.read,"
+    "kso.meeting_minutes.read,"
+    "kso.meeting_minutes_content.read,"
+    "kso.meeting_recording.read,"
+    "kso.meeting_recording_content.read,"
+    "kso.group.read,"
+    "kso.contact.read"
+)
 
 
 @dataclass
@@ -172,8 +182,13 @@ def authorize_user(
     port: int = 8765,
     timeout_seconds: int = 300,
 ) -> dict:
-    if not auth.client_id or not auth.client_secret or not auth.redirect_uri or not auth.scope:
-        raise ValueError("授权前必须在 config.json 中提供 client_id/client_secret/redirect_uri/scope")
+    if not auth.client_id or not auth.client_secret:
+        raise ValueError("授权前必须在 config.json 中提供 client_id/client_secret")
+
+    if not auth.redirect_uri:
+        auth.redirect_uri = f"http://{host}:{port}/callback"
+    if not auth.scope:
+        auth.scope = DEFAULT_USER_SCOPE
 
     state = secrets.token_urlsafe(16)
     CallbackHandler.result = None
