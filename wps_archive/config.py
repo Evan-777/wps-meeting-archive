@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -9,9 +9,13 @@ from typing import Any
 @dataclass
 class AuthConfig:
     access_token: str = ""
+    access_token_expires_at: str = ""
+    refresh_token: str = ""
+    refresh_expires_in: int = 0
     client_id: str = ""
     client_secret: str = ""
     authorization_code: str = ""
+    scope: str = ""
     redirect_uri: str = ""
     token_url: str = "https://openapi.wps.cn/oauth2/token"
 
@@ -120,14 +124,23 @@ def _merge_dataclass(instance: Any, payload: dict[str, Any]) -> Any:
     return instance
 
 
-def load_config(path: str | Path) -> AppConfig:
+def load_config(path: str | Path, *, validate: bool = True) -> AppConfig:
     config_path = Path(path).expanduser().resolve()
     payload = json.loads(config_path.read_text(encoding="utf-8"))
     app = AppConfig()
     _merge_dataclass(app, payload)
     app.config_path = str(config_path)
-    validate_config(app)
+    if validate:
+        validate_config(app)
     return app
+
+
+def save_config(config: AppConfig, path: str | Path | None = None) -> None:
+    target = Path(path or config.config_path).expanduser().resolve()
+    payload = asdict(config)
+    payload.pop("config_path", None)
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    config.config_path = str(target)
 
 
 def validate_config(config: AppConfig) -> None:

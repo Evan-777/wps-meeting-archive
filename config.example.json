@@ -1,10 +1,14 @@
 {
   "auth": {
     "access_token": "",
+    "access_token_expires_at": "",
+    "refresh_token": "",
+    "refresh_expires_in": 0,
     "client_id": "AKxxxxxxxxxxxxxxxx",
     "client_secret": "",
     "authorization_code": "",
-    "redirect_uri": "",
+    "scope": "kso.meeting.read,kso.meeting_minutes.read,kso.meeting_minutes_content.read,kso.meeting_recording.read,kso.meeting_recording_content.read,kso.group.read,kso.contact.read",
+    "redirect_uri": "http://127.0.0.1:8765/callback",
     "token_url": "https://openapi.wps.cn/oauth2/token"
   },
   "meetings": {

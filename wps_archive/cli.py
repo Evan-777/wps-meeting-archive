@@ -4,8 +4,8 @@ import argparse
 import json
 from pathlib import Path
 
-from .auth import get_access_token
-from .config import load_config
+from .auth import apply_token_payload, authorize_user, get_access_token
+from .config import load_config, save_config
 from .meeting_client import WpsOpenApiClient
 from .state import load_state, save_state
 from .syncer import ArchiveSyncService
@@ -14,10 +14,22 @@ from .utils import utc_now
 from .webhook import WebhookClient
 
 
+def default_config_path() -> str:
+    return str((Path.cwd() / "config.json").resolve())
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="WPS meeting archive sync CLI")
-    parser.add_argument("--config", default="/Users/evan/wps_robot/config.json", help="Path to config JSON")
+    parser.add_argument("--config", default=default_config_path(), help="Path to config JSON")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    check_config = subparsers.add_parser("check-config", help="Validate config and print resolved paths")
+    check_config.add_argument("--json", action="store_true", help="Print validation result as JSON")
+
+    authorize = subparsers.add_parser("authorize-user", help="Open browser and save user access token into config")
+    authorize.add_argument("--no-open", action="store_true", help="Print auth URL only, do not open browser automatically")
+    authorize.add_argument("--host", default="127.0.0.1", help="Local callback host")
+    authorize.add_argument("--port", type=int, default=8765, help="Local callback port")
 
     parse_title = subparsers.add_parser("parse-title", help="Parse a meeting title")
     parse_title.add_argument("title", help="Meeting title to parse")
@@ -45,6 +57,35 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    if args.command == "check-config":
+        config = load_config(args.config, validate=False)
+        missing = []
+        if not config.auth.client_id:
+            missing.append("auth.client_id")
+        if not config.auth.client_secret:
+            missing.append("auth.client_secret")
+        if not config.airscript.api_token:
+            missing.append("airscript.api_token")
+        if not config.airscript.upsert_pending_archive_webhook:
+            missing.append("airscript.upsert_pending_archive_webhook")
+        if not config.airscript.finalize_pending_archive_webhook:
+            missing.append("airscript.finalize_pending_archive_webhook")
+        payload = {
+            "config_path": config.config_path,
+            "state_file_path": str(config.state_file_path),
+            "has_access_token": bool(config.auth.access_token),
+            "has_refresh_token": bool(config.auth.refresh_token),
+            "redirect_uri": config.auth.redirect_uri,
+            "scope": config.auth.scope,
+            "missing_required_fields": missing,
+        }
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            for key, value in payload.items():
+                print(f"{key}: {value}")
+        return 0
+
     if args.command == "parse-title":
         result = parse_meeting_title(args.title, exclude_people=["沈惠中"])
         print(
@@ -63,7 +104,22 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if args.command == "authorize-user":
+        config = load_config(args.config, validate=False)
+        token_payload = authorize_user(
+            config.auth,
+            open_browser=not args.no_open,
+            host=args.host,
+            port=args.port,
+        )
+        apply_token_payload(config.auth, token_payload)
+        save_config(config)
+        print(json.dumps(token_payload, ensure_ascii=False, indent=2))
+        print(f"config_path={config.config_path}")
+        return 0
+
     config = load_config(args.config)
+
     webhook_client = WebhookClient(api_token=config.airscript.api_token)
 
     if args.command == "sync-mock":
@@ -86,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 0
 
-    access_token = get_access_token(config.auth)
+    access_token = get_access_token(config)
     api_client = WpsOpenApiClient(config, access_token)
     service = ArchiveSyncService(config, api_client, webhook_client)
 
