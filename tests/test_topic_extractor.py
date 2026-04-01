@@ -18,7 +18,33 @@ class TopicExtractorTests(unittest.TestCase):
             chapters=[{"title": "论文引言与科学问题讨论", "content": "引言部分需要突出航空排放的健康影响，并梳理科学问题和论文修改结构。"}],
             transcript_text="",
         )
-        self.assertEqual(topic, "航空排放健康影响与科学问题")
+        self.assertEqual(topic, "航空排放健康影响")
+
+    def test_does_not_over_compress_source_qualified_health_topic(self):
+        topic = extract_topic_from_recording_content(
+            summary_text="## 关于航空排放健康影响与空间异质性等科学问题的讨论会议",
+            chapters=[],
+            transcript_text="",
+        )
+        self.assertIn("航空排放", topic)
+        self.assertNotEqual(topic, "健康影响")
+
+    def test_keeps_electric_power_qualifier_for_health_topic(self):
+        topic = extract_topic_from_recording_content(
+            summary_text="## 关于电厂排放健康影响与区域差异分析的讨论会议",
+            chapters=[],
+            transcript_text="",
+        )
+        self.assertIn("电厂排放", topic)
+        self.assertNotEqual(topic, "健康影响")
+
+    def test_rejects_bare_health_impact_topic(self):
+        topic = extract_topic_from_recording_content(
+            summary_text="## 关于健康影响的讨论会议",
+            chapters=[],
+            transcript_text="",
+        )
+        self.assertEqual(topic, "")
 
     def test_extracts_professional_terms_from_generic_progress_title(self):
         topic = extract_topic_from_recording_content(

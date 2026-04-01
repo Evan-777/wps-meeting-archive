@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+GENERIC_ONLY_KEYWORDS = {"健康影响", "科学问题", "机制", "模型"}
+
 
 def infer_people_names(title: str = "", topic: str = "", mapping: list[dict[str, Any]] | None = None) -> list[str]:
     rules = mapping or []
@@ -31,6 +33,8 @@ def infer_people_names(title: str = "", topic: str = "", mapping: list[dict[str,
 
         matched = [keyword for keyword in include_keywords if keyword in haystack]
         if not matched:
+            continue
+        if all(keyword in GENERIC_ONLY_KEYWORDS for keyword in matched):
             continue
 
         total_length = sum(len(keyword) for keyword in matched)

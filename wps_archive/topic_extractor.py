@@ -11,6 +11,28 @@ TRANSCRIPT_SPLIT_RE = re.compile(r"[，。！？；\n]+")
 TRANSCRIPT_PREFIX_RE = re.compile(r"^(我们今天继续|我们今天|今天继续|继续|然后|就是|今天|我们|先|再|主要是|主要|一下|讨论|分析)+")
 CONTENT_SPLIT_RE = re.compile(r"[。！？；\n]+")
 SEGMENT_SPLIT_RE = re.compile(r"[、，,；;]|以及|并且|并|和|与|及")
+HIGH_CONFIDENCE_SHORT_TOPICS = {"NO2阈值", "源汇分析"}
+GENERIC_BARE_TOPICS = {"健康影响", "科学问题", "机制", "模型"}
+SOURCE_QUALIFIERS = [
+    "航空排放",
+    "电厂排放",
+    "火电",
+    "电力排放",
+    "燃煤电厂",
+    "健康暴露",
+    "贫困人口",
+    "美国排放数据",
+    "造纸厂",
+    "沙尘",
+    "水稻甲烷",
+    "能源甲烷",
+    "交通源",
+    "VOCs",
+    "VOC",
+    "臭氧",
+    "NO2",
+    "空调",
+]
 PATTERN_TERMS = [
     (re.compile(r"AI辅助55版本", re.IGNORECASE), "AI辅助55版本"),
     (re.compile(r"55版本"), "55版本"),
@@ -20,8 +42,10 @@ PATTERN_TERMS = [
     (re.compile(r"臭氧季节变化"), "臭氧季节变化"),
     (re.compile(r"源汇(?:角度)?(?:分析)?"), "源汇分析"),
     (re.compile(r"航空排放(?:健康影响)?"), "航空排放健康影响"),
-    (re.compile(r"健康影响"), "健康影响"),
-    (re.compile(r"科学问题"), "科学问题"),
+    (re.compile(r"电厂排放健康(?:影响)?"), "电厂排放健康影响"),
+    (re.compile(r"电力排放健康(?:影响)?"), "电力排放健康影响"),
+    (re.compile(r"燃煤电厂(?:排放)?健康(?:影响)?"), "燃煤电厂健康影响"),
+    (re.compile(r"火电(?:排放)?健康(?:影响)?"), "火电健康影响"),
     (re.compile(r"优化函数参数设置"), "优化函数参数设置"),
     (re.compile(r"结果量级"), "结果量级"),
     (re.compile(r"观测误差"), "观测误差"),
@@ -45,13 +69,16 @@ DOMAIN_HINTS = [
     "结果量级",
     "观测误差",
     "航空排放",
-    "健康影响",
     "航空排放健康影响",
+    "电厂排放",
+    "电厂排放健康影响",
+    "电力排放",
+    "燃煤电厂",
+    "火电",
     "臭氧污染",
     "臭氧季节变化",
     "NO2阈值",
     "季节机制转换点",
-    "科学问题",
     "臭氧",
     "NO2",
     "AOD",
@@ -115,6 +142,10 @@ GENERIC_TOPICS = {
     "讨论",
     "总结",
     "章节",
+    "健康影响",
+    "科学问题",
+    "机制",
+    "模型",
 }
 
 GENERIC_SEGMENTS = {
@@ -200,7 +231,9 @@ def is_meaningful_topic(text: str) -> bool:
         return False
     if value.endswith("的会议"):
         return False
-    return len(value) >= 4
+    if len(value) < 4 and value not in HIGH_CONFIDENCE_SHORT_TOPICS:
+        return False
+    return True
 
 
 def _score_transcript_topic(topic: str) -> int:
@@ -262,6 +295,10 @@ def _refine_candidate(text: str) -> str:
     segments = _extract_domain_segments(text)
     if segments:
         combined = _combine_segments(segments)
+        if combined and _drops_required_qualifiers(value, combined):
+            return value
+        if combined and _is_generic_candidate(combined) and not _is_generic_candidate(value):
+            return value
         if combined and (
             _is_generic_candidate(value)
             or len(value) > 14
@@ -376,18 +413,28 @@ def _contains_domain_hint(text: str) -> bool:
 def _is_generic_candidate(topic: str) -> bool:
     if not topic:
         return True
+    if topic in GENERIC_BARE_TOPICS:
+        return True
     if topic in GENERIC_SEGMENTS:
         return True
     if any(topic.startswith(prefix) for prefix in GENERIC_PREFIXES):
         return True
     hint_count = sum(1 for hint in DOMAIN_HINTS if hint in topic)
+    has_source_qualifier = any(qualifier in topic for qualifier in SOURCE_QUALIFIERS)
     if any(fragment in topic for fragment in ["论文提纲", "未来预测", "研究计划", "撰写安排", "文章撰写", "论文修改", "基金申请"]):
         return True
     if topic.endswith("问题") and hint_count <= 2:
         return True
-    if ("论文引言" in topic or "科学问题" in topic) and hint_count <= 2:
+    if ("论文引言" in topic or "科学问题" in topic) and hint_count <= 2 and not has_source_qualifier:
         return True
     return False
+
+
+def _drops_required_qualifiers(original: str, candidate: str) -> bool:
+    required = [qualifier for qualifier in SOURCE_QUALIFIERS if qualifier in original]
+    if not required:
+        return False
+    return not any(qualifier in candidate for qualifier in required)
 
 
 def _strip_segment_filler(text: str) -> str:

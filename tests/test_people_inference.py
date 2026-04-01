@@ -5,6 +5,7 @@ from wps_archive.people_inference import infer_people_names
 
 MAPPING = [
     {"name": "韩宇潇", "priority": 10, "include_keywords": ["航空排放健康", "航空排放"]},
+    {"name": "郭鹏", "priority": 10, "include_keywords": ["电厂排放健康", "电厂排放", "电厂", "火电", "电力排放", "燃煤电厂"]},
     {"name": "李孟如", "priority": 10, "include_keywords": ["造纸厂", "造纸行业"]},
     {
         "name": "麦泽霖",
@@ -29,6 +30,18 @@ class PeopleInferenceTests(unittest.TestCase):
         self.assertEqual(
             infer_people_names(topic="航空排放健康影响与空间异质性等科学问题", mapping=MAPPING),
             ["韩宇潇"],
+        )
+
+    def test_matches_guopeng_only_with_power_plant_qualifier(self):
+        self.assertEqual(
+            infer_people_names(topic="电厂排放健康影响与区域差异分析", mapping=MAPPING),
+            ["郭鹏"],
+        )
+
+    def test_does_not_match_anyone_for_bare_generic_health_topic(self):
+        self.assertEqual(
+            infer_people_names(topic="健康影响", mapping=MAPPING),
+            [],
         )
 
     def test_matches_model_topic(self):

@@ -203,6 +203,53 @@ class SyncerTests(unittest.TestCase):
         self.assertEqual(payload["suggestedTopic"], "航空排放健康影响")
         self.assertEqual(payload["suggestedPeopleNames"], ["韩宇潇"])
 
+    def test_sync_pending_infers_guopeng_from_power_plant_topic(self):
+        config = AppConfig()
+        config.airscript.api_token = "token"
+        config.airscript.upsert_pending_archive_webhook = "https://example.com/upsert"
+        config.airscript.finalize_pending_archive_webhook = "https://example.com/finalize"
+        config.archive.exclude_people = ["沈惠中"]
+        config.archive.topic_people_mapping = [
+            {
+                "name": "郭鹏",
+                "priority": 10,
+                "include_keywords": ["电厂排放健康", "电厂排放", "电厂", "火电", "电力排放", "燃煤电厂"],
+            },
+        ]
+
+        meeting = {"id": "m1", "subject": "沈惠中的会议"}
+        detail = {
+            "id": "m1",
+            "subject": "沈惠中的会议",
+            "start_time": "2026-03-30T10:00:00+08:00",
+            "create_time": "2026-03-30T09:00:00+08:00",
+            "host_user": {"user_id": "teacher-1"},
+        }
+        recording = {
+            "id": "rec-1",
+            "view_url": "https://meeting.kdocs.cn/meeting/ai/abc",
+            "create_time": "2026-03-30T11:00:00+08:00",
+        }
+        participants = [{"user_id": "teacher-1", "is_host": True}]
+        api_client = FakeApiClient(
+            [meeting],
+            {"m1": detail},
+            {"m1": participants},
+            {"m1": [recording]},
+            {"m1": []},
+            {"teacher-1": {"user_name": "沈惠中"}},
+            summaries={("m1", "rec-1"): "## 关于电厂排放健康影响与区域差异分析的讨论会议"},
+        )
+        webhook_client = FakeWebhookClient()
+        service = ArchiveSyncService(config, api_client, webhook_client)
+
+        summary = service.sync_pending(SyncState(last_sync_at="2026-03-30T00:00:00+08:00"))
+
+        self.assertEqual(summary.upserted, 1)
+        _, payload = webhook_client.calls[0]
+        self.assertIn("电厂排放", payload["suggestedTopic"])
+        self.assertEqual(payload["suggestedPeopleNames"], ["郭鹏"])
+
     def test_sync_pending_prefers_priority_rule_for_conflicting_topic(self):
         config = AppConfig()
         config.airscript.api_token = "token"
