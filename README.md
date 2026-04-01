@@ -78,6 +78,20 @@ python3 -m wps_archive --config /Users/evan/wps_robot/config.json sync-pending
 python3 -m wps_archive --config /Users/evan/wps_robot/config.json finalize-confirmed
 ```
 
+### 流程图版说明
+
+```mermaid
+flowchart TD
+    A["运行 sync-pending"] --> B["系统读取最近的新会议"]
+    B --> C["自动写入 会议待归档表"]
+    C --> D["自动填: 日期 / 链接 / 确认主题 / 确认类型 / 确认标签"]
+    D --> E["老师检查并补充 确认相关人员 等字段"]
+    E --> F["把 归档状态 改成 确认归档"]
+    F --> G["运行 finalize-confirmed"]
+    G --> H["系统写入 文音视频档案 总表"]
+    H --> I["待归档表状态自动改成 已归档"]
+```
+
 ### 使用时需要知道的 3 个现实限制
 
 1. 需要先用目标账号授权，系统才能读取该账号发起的会议。
