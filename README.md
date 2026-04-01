@@ -11,6 +11,81 @@
 
 ---
 
+## 导师视角：一页式使用说明
+
+如果你只是想“把最近的会议记录同步进表里，然后确认后归档”，只需要记住下面这几步：
+
+### 第一步：先同步新会议到待归档表
+
+在本机运行：
+
+```bash
+cd /Users/evan/wps_robot
+python3 -m wps_archive --config /Users/evan/wps_robot/config.json sync-pending
+```
+
+运行后，系统会把最近的新会议自动写入 `会议待归档表`，并尽量自动填写：
+
+- `会议日期`
+- `会议链接`
+- `确认主题`
+- `确认相关人员`
+- `确认类型`
+- `确认标签`
+- `归档状态`
+
+### 第二步：在待归档表里确认信息
+
+打开 WPS 多维表里的 `会议待归档表`，逐条检查：
+
+- `确认相关人员`
+- `确认主题`
+- `确认类型`
+- `确认标签`
+
+确认无误后，把该条记录的：
+
+- `归档状态`
+
+改成：
+
+- `确认归档`
+
+### 第三步：正式归档到总表
+
+在本机运行：
+
+```bash
+cd /Users/evan/wps_robot
+python3 -m wps_archive --config /Users/evan/wps_robot/config.json finalize-confirmed
+```
+
+系统会把所有 `归档状态 = 确认归档` 的记录写入 `文音视频档案` 总表，并自动把待归档记录改成：
+
+- `已归档`
+
+### 平时最常用的就这两条命令
+
+同步待归档：
+
+```bash
+python3 -m wps_archive --config /Users/evan/wps_robot/config.json sync-pending
+```
+
+正式归档：
+
+```bash
+python3 -m wps_archive --config /Users/evan/wps_robot/config.json finalize-confirmed
+```
+
+### 使用时需要知道的 3 个现实限制
+
+1. 需要先用目标账号授权，系统才能读取该账号发起的会议。
+2. WPS 接口目前读不到“会议记录页面里手动改过的标题”，所以 `确认主题` 是根据录制/纪要内容自动提取出来的待确认值。
+3. 如果会议是导师单人录音、学生没有线上入会，`确认相关人员` 可能无法完全自动识别，仍需要手动确认。
+
+---
+
 ## 1. 项目解决什么问题
 
 实验室会议记录原先需要手动整理到 WPS 多维表中，重复劳动主要包括：
