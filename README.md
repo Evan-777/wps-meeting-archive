@@ -88,13 +88,6 @@ flowchart TD
 - `tests/`
   单元测试
 
-私有文件：
-
-- `config.json`
-- `.wps_archive_state.json`
-
-这两个文件不要提交到公开仓库。
-
 ---
 
 ## WPS 表结构
