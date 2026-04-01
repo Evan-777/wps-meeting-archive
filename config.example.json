@@ -1,0 +1,110 @@
+{
+  "auth": {
+    "access_token": "",
+    "client_id": "AKxxxxxxxxxxxxxxxx",
+    "client_secret": "",
+    "authorization_code": "",
+    "redirect_uri": "",
+    "token_url": "https://openapi.wps.cn/oauth2/token"
+  },
+  "meetings": {
+    "list_endpoint": "https://openapi.wps.cn/v7/meetings",
+    "detail_endpoint_template": "https://openapi.wps.cn/v7/meetings/{meeting_id}",
+    "participants_endpoint_template": "https://openapi.wps.cn/v7/meetings/{meeting_id}/participants",
+    "user_endpoint_template": "https://openapi.wps.cn/v7/users/{user_id}",
+    "minutes_endpoint_template": "https://openapi.wps.cn/v7/meetings/{meeting_id}/minutes",
+    "recordings_endpoint_template": "https://openapi.wps.cn/v7/meetings/{meeting_id}/recordings",
+    "recording_summary_endpoint_template": "https://openapi.wps.cn/v7/meetings/{meeting_id}/recordings/{recording_id}/summary",
+    "recording_chapters_endpoint_template": "https://openapi.wps.cn/v7/meetings/{meeting_id}/recordings/{recording_id}/chapters",
+    "recording_transcript_endpoint_template": "https://openapi.wps.cn/v7/meetings/{meeting_id}/recordings/{recording_id}/transcript",
+    "page_size": 50,
+    "safe_lookback_days": 7,
+    "list_query": {
+      "page_size_param": "page_size",
+      "cursor_param": "page_token",
+      "start_param": "start_time",
+      "end_param": "end_time",
+      "time_format": "unix_seconds",
+      "initiator_param": "host_user_id",
+      "extra_params": {}
+    },
+    "list_response": {
+      "items_path": "data.items",
+      "next_cursor_path": "data.next_page_token"
+    },
+    "meeting_fields": {
+      "id": "id",
+      "title": "subject",
+      "start_time": "start_time",
+      "created_at": "create_time",
+      "initiator_user_id": "host_user.user_id"
+    },
+    "minutes_response": {
+      "items_path": "data.items"
+    },
+    "minute_fields": {
+      "id": "id",
+      "url": "view_url",
+      "status": "status",
+      "generated_at": "create_time"
+    },
+    "ready_status_values": [
+      "ready",
+      "finished",
+      "success",
+      "done"
+    ],
+    "mentor_user_id": "",
+    "mentor_name": "沈惠中"
+  },
+  "airscript": {
+    "api_token": "",
+    "upsert_pending_archive_webhook": "https://365.kdocs.cn/api/v3/ide/file/FILE_ID/script/SCRIPT_ID/sync_task",
+    "finalize_pending_archive_webhook": "https://365.kdocs.cn/api/v3/ide/file/FILE_ID/script/SCRIPT_ID/sync_task"
+  },
+  "archive": {
+    "default_type": "学术讨论",
+    "exclude_people": [
+      "沈惠中"
+    ],
+    "topic_people_mapping": [
+      {
+        "name": "何金玲",
+        "priority": 20,
+        "include_keywords": [
+          "AI辅助55版本",
+          "55版本",
+          "化学机制开发",
+          "CMAQ化学机制"
+        ]
+      },
+      {
+        "name": "麦泽霖",
+        "priority": 10,
+        "include_keywords": [
+          "多物种反演",
+          "伴随模型",
+          "优化函数"
+        ],
+        "exclude_keywords": [
+          "AI辅助55版本",
+          "55版本",
+          "化学机制开发"
+        ]
+      },
+      {
+        "name": "吴燕星",
+        "priority": 10,
+        "include_keywords": [
+          "臭氧浓度机制",
+          "臭氧机制",
+          "NO2阈值",
+          "季节机制"
+        ]
+      }
+    ]
+  },
+  "paths": {
+    "state_file": ".wps_archive_state.json"
+  }
+}
