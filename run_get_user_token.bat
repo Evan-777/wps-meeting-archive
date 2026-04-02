@@ -9,7 +9,7 @@ if not exist "config.json" (
   exit /b 1
 )
 
-py -m wps_archive --config "%CD%\config.json" authorize-user
+call :run_python -m wps_archive --config "%CD%\config.json" authorize-user
 set EXIT_CODE=%ERRORLEVEL%
 echo.
 if %EXIT_CODE% neq 0 (
@@ -19,3 +19,20 @@ if %EXIT_CODE% neq 0 (
 )
 pause
 exit /b %EXIT_CODE%
+
+:run_python
+where py >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+  py %*
+  exit /b %ERRORLEVEL%
+)
+
+where python >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+  python %*
+  exit /b %ERRORLEVEL%
+)
+
+echo Python was not found.
+echo Install Python or add py/python to PATH, then try again.
+exit /b 9009

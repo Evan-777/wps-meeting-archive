@@ -83,6 +83,8 @@ Copy-Item .\config.example.json .\config.json
 - Windows：双击 `run_get_user_token.bat`
 - macOS：双击 `run_get_user_token.command`
 
+Windows 的 `.bat` 启动脚本会优先使用 `py`，找不到时会自动回退到 `python`。
+
 ### 命令行方式
 
 - macOS / Linux
